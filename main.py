@@ -1,14 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
 import statsmodels.api as sm
+from sklearn.linear_model import LinearRegression
 
 # Load the Brooklyn homes dataset
 brooklyn_homes = pd.read_csv("brooklyn_sales_map.csv")
@@ -58,12 +52,12 @@ sales_by_neighborhood = brooklyn_homes.groupby('neighborhood')['sale_price'].sum
 sales_by_neighborhood = sales_by_neighborhood.sort_values(ascending=False)
 
 # Plot sales per neighborhood
-plt.figure(figsize=(12, 8))
+plt.figure(figsize=(50, 8))
 sales_by_neighborhood.plot(kind='bar', color='skyblue')
 plt.xlabel('Neighborhood')
 plt.ylabel('Total Sales')
 plt.title('Total Sales per Neighborhood in Brooklyn')
-plt.xticks(rotation=90)
+plt.xticks(rotation=45,ha="right")
 plt.show()
 
 # Group the data by year and calculate the average sale_price for each year
@@ -89,12 +83,12 @@ avg_price_top_100_by_neighborhood = top_100_highest_prices.groupby('neighborhood
 top_10_neighborhoods = avg_price_top_100_by_neighborhood.nlargest(10)
 
 # Plot the top 10 neighborhoods and their average prices
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(20, 6))
 top_10_neighborhoods.plot(kind='bar', color='skyblue')
 plt.xlabel('Neighborhood')
 plt.ylabel('Average Sale Price')
 plt.title('Top 10 Neighborhoods with Highest Average Sale Prices (Top 100 Highest Sale Price Houses)')
-plt.xticks(rotation=45)
+plt.xticks(rotation=15)
 plt.show()
 
 # Group the data by year and find the highest and lowest sale prices for each year
@@ -353,17 +347,31 @@ from sklearn.model_selection import train_test_split
 features = list(housing_data.drop(['sale_price'], axis=1))
 y = housing_data.sale_price
 X = housing_data[features]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=100)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=100)
+
+
+# Initialize Linear Regression model
+linear_model = LinearRegression()
+
+# Fit the model to the training data
+linear_model.fit(X_train, y_train)
+
+# Make predictions on the test data
+linear_predictions = linear_model.predict(X_test)
+
+# Evaluate the performance of the Linear Regression model
+linear_r2 = r2_score(y_test, linear_predictions)
+linear_mae = mean_absolute_error(y_test, linear_predictions)
+
 dummy_median = DummyRegressor(strategy='mean')
 dummy_regressor = dummy_median.fit(X_train, y_train)
 dummy_predicts = dummy_regressor.predict(X_test)
-print("Model Accuracy:", dummy_regressor.score(X_test, y_test) * 100)
-print('$', mean_absolute_error(y_test, dummy_predicts))
+print("Model Accuracy:", linear_r2)
+print('$', linear_mae)
 
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
-import pandas as pd
 
 # Assuming you have X_train, X_test, y_train, y_test, and features defined
 # Replace this with your actual data
@@ -387,6 +395,8 @@ print('R2 Score:', r2_nb)
 # Visualize the R2 score
 plt.bar(['Naive Bayes'], [r2_nb], align='center')
 plt.title('R2 Score Comparison')
+plt.figure(figsize=(30, 8))
+plt.xticks(rotation=45,ha="right")
 plt.xlabel('Model')
 plt.ylabel('R2 Score')
 plt.show()
