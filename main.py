@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
+import statsmodels.api as sm
 
 # Load the Brooklyn homes dataset
 brooklyn_homes = pd.read_csv("brooklyn_sales_map.csv")
@@ -15,8 +16,8 @@ neighborhood_mapping = pd.read_csv("neighborhood_mapping.csv")
 inflation_data = pd.read_csv("Inflation.csv")
 percapita_data = pd.read_csv("Percapita.csv")
 
-# Exclude transactions with sale_price of $0 or nominal amounts
-brooklyn_homes = brooklyn_homes[brooklyn_homes.sale_price > 1000]
+# # Exclude transactions with sale_price of $0 or nominal amounts
+# brooklyn_homes = brooklyn_homes[brooklyn_homes.sale_price > 1000]
 
 # Group the data by year and calculate the total sales for each year
 sales_by_year = brooklyn_homes.groupby(brooklyn_homes['sale_date'].str[:4])['sale_price'].sum()
@@ -163,7 +164,6 @@ synthetic_time_series_data = pd.DataFrame(data={'sale_price': synthetic_sale_pri
 # Print the generated synthetic time series data
 print(synthetic_time_series_data.head())
 
-
 # Assuming 'synthetic_time_series_data' DataFrame contains synthetic sale prices with dates as the index
 
 # Feature engineering: Extracting year and month from the index
@@ -173,22 +173,20 @@ synthetic_time_series_data['Month'] = synthetic_time_series_data.index.month
 # Creating a binary column 'Interest_Growth' to represent areas with growing interest (1) and decreasing interest (0)
 synthetic_time_series_data['Interest_Growth'] = 0  # Default is decreasing interest
 
-# Linear regression for each year to identify trends
+# ARIMA model for each year to identify trends
 for year in synthetic_time_series_data['Year'].unique():
-    year_data = synthetic_time_series_data[synthetic_time_series_data['Year'] == year]
+    year_data = synthetic_time_series_data[synthetic_time_series_data['Year'] == year]['sale_price']
 
-    X = np.arange(len(year_data)).reshape(-1, 1)
-    y = year_data['sale_price'].values
-
-    # Fit linear regression model
-    model = LinearRegression()
-    model.fit(X, y)
+    # Fit ARIMA model
+    order = (1, 1, 1)  # You may need to adjust these parameters based on your data
+    model = sm.tsa.ARIMA(year_data, order=order)
+    results = model.fit()
 
     # Predictions
-    predictions = model.predict(X)
+    predictions = results.predict(start=0, end=len(year_data)-1, dynamic=False)
 
     # Assessing trend by comparing the first and last sale prices in the year
-    if predictions[-1] > predictions[0]:
+    if predictions.iloc[-1] > predictions.iloc[0]:
         synthetic_time_series_data.loc[synthetic_time_series_data['Year'] == year, 'Interest_Growth'] = 1
 
 # Visualizing the results
@@ -206,6 +204,7 @@ plt.ylabel('Sale Price')
 plt.title('Synthetic Time Series Data and Interest Assessment')
 plt.legend()
 plt.show()
+
 
 print("Prediction Code")
 housing_data = pd.read_csv('brooklyn_sales_map.csv')
