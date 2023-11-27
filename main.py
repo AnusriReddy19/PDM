@@ -164,6 +164,50 @@ synthetic_time_series_data = pd.DataFrame(data={'sale_price': synthetic_sale_pri
 # Print the generated synthetic time series data
 print(synthetic_time_series_data.head())
 
+
+# Assuming 'synthetic_time_series_data' DataFrame contains synthetic sale prices with dates as the index
+
+# Feature engineering: Extracting year and month from the index
+synthetic_time_series_data['Year'] = synthetic_time_series_data.index.year
+synthetic_time_series_data['Month'] = synthetic_time_series_data.index.month
+
+# Creating a binary column 'Interest_Growth' to represent areas with growing interest (1) and decreasing interest (0)
+synthetic_time_series_data['Interest_Growth'] = 0  # Default is decreasing interest
+
+# Linear regression for each year to identify trends
+for year in synthetic_time_series_data['Year'].unique():
+    year_data = synthetic_time_series_data[synthetic_time_series_data['Year'] == year]
+
+    X = np.arange(len(year_data)).reshape(-1, 1)
+    y = year_data['sale_price'].values
+
+    # Fit linear regression model
+    model = LinearRegression()
+    model.fit(X, y)
+
+    # Predictions
+    predictions = model.predict(X)
+
+    # Assessing trend by comparing the first and last sale prices in the year
+    if predictions[-1] > predictions[0]:
+        synthetic_time_series_data.loc[synthetic_time_series_data['Year'] == year, 'Interest_Growth'] = 1
+
+# Visualizing the results
+plt.figure(figsize=(10, 6))
+plt.plot(synthetic_time_series_data.index, synthetic_time_series_data['sale_price'], label='Synthetic Sale Prices', color='blue')
+plt.scatter(synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 1].index,
+            synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 1]['sale_price'],
+            label='Interest Growing', color='green', marker='o')
+plt.scatter(synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 0].index,
+            synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 0]['sale_price'],
+            label='Interest Decreasing', color='red', marker='o')
+
+plt.xlabel('Date')
+plt.ylabel('Sale Price')
+plt.title('Synthetic Time Series Data and Interest Assessment - Linear Regression')
+plt.legend()
+plt.show()
+
 # Assuming 'synthetic_time_series_data' DataFrame contains synthetic sale prices with dates as the index
 
 # Feature engineering: Extracting year and month from the index
@@ -201,7 +245,7 @@ plt.scatter(synthetic_time_series_data[synthetic_time_series_data['Interest_Grow
 
 plt.xlabel('Date')
 plt.ylabel('Sale Price')
-plt.title('Synthetic Time Series Data and Interest Assessment')
+plt.title('Synthetic Time Series Data and Interest Assessment - ARIMA')
 plt.legend()
 plt.show()
 
