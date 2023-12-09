@@ -93,12 +93,12 @@ plt.show()
 
 # Group the data by year and find the highest and lowest sale prices for each year
 highest_prices = brooklyn_homes.groupby('Year')['sale_price'].max()
-lowest_prices = brooklyn_homes.groupby('Year')['sale_price'].min()
+lowest_prices = brooklyn_homes[brooklyn_homes['sale_price'] > 10000].groupby('Year')['sale_price'].min()
 
 # Plot the highest and lowest sale prices over the years
 plt.figure(figsize=(10, 6))
 plt.plot(highest_prices.index, highest_prices.values, marker='o', color='orange', label='Highest Price')
-plt.plot(lowest_prices.index, lowest_prices.values, marker='o', color='green', label='Lowest Price (> $1000)')
+plt.plot(lowest_prices.index, lowest_prices.values, marker='o', color='green', label='Lowest Price (> $10000)')
 plt.xlabel('Year')
 plt.ylabel('Sale Price')
 plt.title('Highest and Lowest Sale Prices Over the Years')
@@ -228,18 +228,38 @@ for year in synthetic_time_series_data['Year'].unique():
         synthetic_time_series_data.loc[synthetic_time_series_data['Year'] == year, 'Interest_Growth'] = 1
 
 # Visualizing the results
+# plt.figure(figsize=(10, 6))
+# plt.plot(synthetic_time_series_data.index, synthetic_time_series_data['sale_price'], label='Synthetic Sale Prices', color='blue')
+# plt.scatter(synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 1].index,
+#             synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 1]['sale_price'],
+#             label='Interest Growing', color='green', marker='o')
+# plt.scatter(synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 0].index,
+#             synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 0]['sale_price'],
+#             label='Interest Decreasing', color='red', marker='o')
+#
+# plt.xlabel('Date')
+# plt.ylabel('Sale Price')
+# plt.title('Synthetic Time Series Data and Interest Assessment - ARIMA')
+# plt.legend()
+# plt.show()
+
+# Assuming synthetic_time_series_data contains the ARIMA predictions and Interest_Growth column
 plt.figure(figsize=(10, 6))
-plt.plot(synthetic_time_series_data.index, synthetic_time_series_data['sale_price'], label='Synthetic Sale Prices', color='blue')
-plt.scatter(synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 1].index,
-            synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 1]['sale_price'],
-            label='Interest Growing', color='green', marker='o')
-plt.scatter(synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 0].index,
-            synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 0]['sale_price'],
-            label='Interest Decreasing', color='red', marker='o')
+
+# Plotting the ARIMA predictions
+plt.plot(synthetic_time_series_data.index, synthetic_time_series_data['sale_price'], label='ARIMA Predictions', color='blue')
+
+# Plotting 'Interest decreasing' points
+interest_decreasing = synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 0]
+plt.scatter(interest_decreasing.index, interest_decreasing['sale_price'], label='Interest Decreasing', color='red', marker='o')
+
+# Plotting 'Interest growing' points
+interest_growing = synthetic_time_series_data[synthetic_time_series_data['Interest_Growth'] == 1]
+plt.scatter(interest_growing.index, interest_growing['sale_price'], label='Interest Growing', color='green', marker='o')
 
 plt.xlabel('Date')
 plt.ylabel('Sale Price')
-plt.title('Synthetic Time Series Data and Interest Assessment - ARIMA')
+plt.title('ARIMA Predictions and Interest Assessment')
 plt.legend()
 plt.show()
 
@@ -399,4 +419,30 @@ plt.figure(figsize=(30, 8))
 plt.xticks(rotation=45,ha="right")
 plt.xlabel('Model')
 plt.ylabel('R2 Score')
+plt.show()
+
+
+#ARCH
+# Assuming synthetic_time_series_data contains the ARIMA predictions and Interest_Growth column
+time_series_data = synthetic_time_series_data[['sale_date', 'sale_price']]
+time_series_data.set_index('sale_date', inplace=True)
+time_series_data.sort_index(inplace=True)
+from arch import arch_model
+# Fit GARCH(1,1) model
+model = arch_model(time_series_data['sale_price'], vol='Garch', p=1, q=1)
+results = model.fit()
+
+# Print model summary
+print(results.summary())
+# Generate volatility predictions
+volatility_predictions = results.conditional_volatility
+
+# Plot the original time series data and volatility predictions
+plt.figure(figsize=(10, 6))
+plt.plot(time_series_data.index, time_series_data['sale_price'], label='Actual Sale Prices', color='blue')
+plt.plot(time_series_data.index, volatility_predictions, label='Volatility Predictions', color='red')
+plt.xlabel('Date')
+plt.ylabel('Sale Price')
+plt.title('GARCH Volatility Predictions')
+plt.legend()
 plt.show()
